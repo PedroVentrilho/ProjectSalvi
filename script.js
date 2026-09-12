@@ -29,3 +29,13 @@ const toggle=document.querySelector('.menu-toggle');const nav=document.querySele
 document.querySelector('#year').textContent=new Date().getFullYear();
 
 document.querySelector('#contactForm').addEventListener('submit',e=>{e.preventDefault();const data=new FormData(e.currentTarget);const text=`Olá! Meu nome é ${data.get('nome')}. Tenho interesse em ${data.get('servico')}. ${data.get('mensagem')||''}`.trim();alert('Formulário demonstrativo. Para produção, conecte este envio ao WhatsApp, e-mail ou backend.\n\nMensagem gerada:\n'+text)});
+
+
+// A logo funciona como atalho para o início da página.
+const brandLink=document.querySelector('.brand');
+brandLink.addEventListener('click',e=>{
+  e.preventDefault();
+  window.scrollTo({top:0,behavior:'smooth'});
+  nav.classList.remove('open');
+  toggle.setAttribute('aria-expanded','false');
+});
