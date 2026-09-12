@@ -985,6 +985,11 @@ body {
   gap:10px
 }
 
+.footer-brand {
+    align-self: flex-start;
+    width: fit-content;
+}
+
 .footer-grid p {
   max-width:460px;
   color:#74818b
@@ -1009,6 +1014,57 @@ body {
   justify-content:space-between;
   color:#65727c;
   font-size:11px
+}
+
+
+/* Redes sociais do rodapé */
+.footer-socials {
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:14px;
+  width:100%;
+  max-width:460px;
+  margin-top:18px
+}
+
+.footer-grid .footer-social-link {
+  min-height:54px;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:12px 18px;
+  border:1px solid rgba(240, 199, 119, .42);
+  border-radius:10px;
+  color:var(--accent2);
+  transition:color .25s ease, border-color .25s ease, background .25s ease, transform .25s ease
+}
+
+.footer-grid .footer-social-link svg {
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round
+}
+
+.footer-grid .footer-social-link.facebook-link,
+.footer-grid .footer-social-link:nth-child(2) svg { fill:currentColor; stroke:none }
+
+.footer-grid .footer-social-link span {
+  color:inherit;
+  font:600 13px Space Grotesk
+}
+
+.footer-grid .footer-social-link:hover {
+  color:var(--bg);
+  background:var(--accent2);
+  border-color:var(--accent2);
+  transform:translateY(-2px)
 }
 
 /* ==========================================================
@@ -1233,4 +1289,8 @@ body {
     font-size:34px
   }
 
+}
+
+@media (max-width: 560px) {
+  .footer-socials { grid-template-columns:1fr; }
 }
