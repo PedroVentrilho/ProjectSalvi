@@ -32,10 +32,15 @@ document.querySelector('#contactForm').addEventListener('submit',e=>{e.preventDe
 
 
 // A logo funciona como atalho para o início da página.
-const brandLink=document.querySelector('.brand');
-brandLink.addEventListener('click',e=>{
-  e.preventDefault();
-  window.scrollTo({top:0,behavior:'smooth'});
-  nav.classList.remove('open');
-  toggle.setAttribute('aria-expanded','false');
+const brandLinks = document.querySelectorAll('.brand');
+brandLinks.forEach(brandLink => {
+    brandLink.addEventListener('click', e => {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+    });
 });
