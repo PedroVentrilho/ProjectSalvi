@@ -715,6 +715,75 @@ body:not(.nav-plain) .nav a:not(.nav-cta):not(.instagram-link).active {
   grid-column:1/-1
 }
 
+/* Zoom do portfólio: a imagem sai do card e cresce até caber na tela,
+   trocando para a versão em alta (assets/portfolio/full/). */
+.zoom-view {
+  position:fixed;
+  inset:0;
+  z-index:110;
+  pointer-events:none;
+  visibility:hidden;
+  background:rgba(10, 11, 13, 0);
+  transition:background .35s ease
+}
+
+.zoom-view.active {
+  visibility:visible
+}
+
+/* O fundo escuro nunca bloqueia a página: um toque fora da imagem fecha o
+   zoom e já chega ao menu, filtro ou link que estiver embaixo. */
+.zoom-view.open {
+  background:rgba(10, 11, 13, .72)
+}
+
+.zoom-view.open .zoom-box {
+  pointer-events:auto;
+  cursor:zoom-out
+}
+
+.portfolio-media img {
+  cursor:zoom-in
+}
+
+.zoom-box {
+  position:fixed;
+  overflow:hidden;
+  border-radius:24px;
+  background:#d7d5d2;
+  box-shadow:0 30px 80px rgba(0, 0, 0, .45);
+  transition:left .38s cubic-bezier(.2, .8, .2, 1), top .38s cubic-bezier(.2, .8, .2, 1),
+    width .38s cubic-bezier(.2, .8, .2, 1), height .38s cubic-bezier(.2, .8, .2, 1),
+    border-radius .38s ease
+}
+
+.zoom-view.open .zoom-box {
+  border-radius:14px
+}
+
+.zoom-box img {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover
+}
+
+.zoom-box .zoom-hd {
+  opacity:0;
+  transition:opacity .25s ease
+}
+
+.zoom-box .zoom-hd.ready {
+  opacity:1
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-view, .zoom-box, .zoom-box .zoom-hd {
+    transition:none
+  }
+}
+
 .project-placeholder {
   min-height:275px;
   display:grid;
@@ -1122,14 +1191,19 @@ body:not(.nav-plain) .nav a:not(.nav-cta):not(.instagram-link).active {
     border-radius:18px;
     padding:16px;
     display:none;
-    flex-direction:column;
-    align-items:stretch
+    /* Linha com quebra: cada link de texto ocupa a linha inteira e os
+       ícones sociais dividem a última, lado a lado. */
+    flex-direction:row;
+    flex-wrap:wrap;
+    align-items:center;
+    row-gap:28px;
+    column-gap:12px
   }
 .nav.open {
     display:flex
   }
-  .instagram-link {
-    align-self:flex-start
+  .nav>a:not(.instagram-link) {
+    flex:1 0 100%
   }
 .menu-toggle {
     display:block
