@@ -21,10 +21,107 @@ document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click
 
 const filters=document.querySelectorAll('.filter');const cards=document.querySelectorAll('.portfolio-card');filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');const f=btn.dataset.filter;cards.forEach(c=>c.style.display=(f==='all'||c.dataset.category===f)?'':'none')}));
 
+// ==========================================================
+// ZOOM DO PORTFÓLIO
+// Com o mouse parado sobre uma imagem, ela cresce até o limite da tela e
+// troca para a versão em alta (assets/portfolio/full/). Quando o mouse sai
+// da imagem ampliada, ela volta ao card. Em telas de toque, um toque abre
+// e outro fecha.
+// ==========================================================
+const ZOOM_DELAY=250; // evita abrir só de atravessar a grade com o mouse
+const zoomView=document.createElement('div');zoomView.className='zoom-view';zoomView.setAttribute('aria-hidden','true');
+const zoomBox=document.createElement('div');zoomBox.className='zoom-box';
+const zoomLow=new Image();zoomLow.alt='';
+const zoomHd=new Image();zoomHd.alt='';zoomHd.className='zoom-hd';
+zoomHd.addEventListener('load',()=>zoomHd.classList.add('ready'));
+zoomBox.append(zoomLow,zoomHd);zoomView.append(zoomBox);document.body.append(zoomView);
+
+let zoomSource=null,zoomRect=null,zoomPending=null,zoomTimer=0,zoomCloseTimer=0,zoomClosing=null;
+
+function placeZoomBox(r){Object.assign(zoomBox.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'})}
+function inRect(e,r){return e.clientX>=r.left&&e.clientX<=r.left+r.width&&e.clientY>=r.top&&e.clientY<=r.top+r.height}
+function fitZoomRect(img){
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  const s=Math.min(innerWidth*.92/w,innerHeight*.88/h);
+  const width=w*s,height=h*s;
+  return {left:(innerWidth-width)/2,top:(innerHeight-height)/2,width,height};
+}
+
+function openZoom(img){
+  if(zoomSource===img)return;
+  if(zoomSource)closeZoom();
+  clearTimeout(zoomTimer);clearTimeout(zoomCloseTimer);
+  if(zoomClosing){zoomClosing.style.visibility='';zoomClosing=null}
+  zoomSource=img;zoomPending=img;
+  const pos=getComputedStyle(img).objectPosition;
+  zoomLow.style.objectPosition=zoomHd.style.objectPosition=pos;
+  zoomLow.src=img.currentSrc||img.src;
+  zoomHd.classList.remove('ready');
+  zoomHd.src=img.src.replace('/portfolio/','/portfolio/full/');
+  // Parte exatamente do quadro do card, sem animação, e depois cresce.
+  zoomBox.style.transition='none';
+  placeZoomBox(img.parentElement.getBoundingClientRect());
+  zoomView.classList.add('active');
+  zoomBox.offsetWidth;
+  zoomBox.style.transition='';
+  zoomRect=fitZoomRect(img);
+  zoomView.classList.add('open');
+  placeZoomBox(zoomRect);
+  img.style.visibility='hidden';
+}
+
+function closeZoom(){
+  if(!zoomSource)return;
+  const img=zoomSource;zoomSource=null;zoomClosing=img;
+  zoomView.classList.remove('open');
+  placeZoomBox(img.parentElement.getBoundingClientRect());
+  zoomCloseTimer=setTimeout(()=>{img.style.visibility='';zoomClosing=null;zoomView.classList.remove('active')},400);
+}
+
+// Abrir pelo hover só no layout de desktop: na grade de uma coluna o mouse
+// está sempre sobre alguma foto e o zoom reabriria sem parar.
+const hoverZoom=matchMedia('(hover:hover) and (pointer:fine) and (min-width:961px)');
+
+// Mouse: o que está sob o cursor decide abrir (após a pausa) ou fechar.
+// Enquanto ampliada, a imagem só fecha quando o cursor sai dela e também
+// do card de origem.
+document.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='mouse')return;
+  if(zoomSource){
+    if(!inRect(e,zoomRect)&&!inRect(e,zoomSource.parentElement.getBoundingClientRect()))closeZoom();
+    return;
+  }
+  if(!hoverZoom.matches)return;
+  const media=e.target.closest&&e.target.closest('.portfolio-media');
+  const img=media?media.querySelector('img'):null;
+  if(img===zoomPending)return;
+  clearTimeout(zoomTimer);zoomPending=img;
+  if(img)zoomTimer=setTimeout(()=>openZoom(img),ZOOM_DELAY);
+});
+// Toque/clique fora da imagem ampliada fecha o zoom sem engolir o toque.
+// Se esse toque cair na própria foto de origem, ela não reabre.
+let zoomJustClosed=null;
+document.addEventListener('pointerdown',e=>{
+  zoomJustClosed=null;
+  if(zoomSource&&!zoomBox.contains(e.target)){zoomJustClosed=zoomSource;closeZoom()}
+});
+document.querySelectorAll('.portfolio-media img').forEach(img=>img.addEventListener('click',()=>{if(img!==zoomJustClosed)openZoom(img)}));
+zoomBox.addEventListener('click',closeZoom);
+document.documentElement.addEventListener('mouseleave',()=>{clearTimeout(zoomTimer);zoomPending=null;closeZoom()});
+window.addEventListener('scroll',()=>{clearTimeout(zoomTimer);zoomPending=null;closeZoom()},{passive:true});
+window.addEventListener('resize',closeZoom);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeZoom()});
+
 const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
 const header=document.querySelector('.site-header');window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>20));
 const toggle=document.querySelector('.menu-toggle');const nav=document.querySelector('.nav');toggle.addEventListener('click',()=>{nav.classList.toggle('open');toggle.setAttribute('aria-expanded',nav.classList.contains('open'))});document.querySelectorAll('.nav a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('open')));
+
+// Menu mobile: qualquer toque/clique fora do menu (e do botão que o abre)
+// ou a tecla Esc recolhe o menu.
+function closeMenu(){if(!nav.classList.contains('open'))return;nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}
+document.addEventListener('pointerdown',e=>{if(!nav.contains(e.target)&&!toggle.contains(e.target))closeMenu()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 
 // Marca em vermelho o link da seção atual: no clique e conforme a rolagem.
 const sectionLinks=[...document.querySelectorAll('.nav a[href^="#"]:not(.nav-cta)')];
