@@ -19,16 +19,95 @@ function openService(i){document.querySelector('#modalIndex').textContent=String
 function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow=''}
 document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',closeModal));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
-const filters=document.querySelectorAll('.filter');const cards=document.querySelectorAll('.portfolio-card');filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');const f=btn.dataset.filter;cards.forEach(c=>c.style.display=(f==='all'||c.dataset.category===f)?'block':'none')}));
+const filters=document.querySelectorAll('.filter');const cards=document.querySelectorAll('.portfolio-card');filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');const f=btn.dataset.filter;cards.forEach(c=>c.style.display=(f==='all'||c.dataset.category===f)?'':'none')}));
 
 const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
 const header=document.querySelector('.site-header');window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>20));
 const toggle=document.querySelector('.menu-toggle');const nav=document.querySelector('.nav');toggle.addEventListener('click',()=>{nav.classList.toggle('open');toggle.setAttribute('aria-expanded',nav.classList.contains('open'))});document.querySelectorAll('.nav a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('open')));
 
+// Marca em vermelho o link da seção atual: no clique e conforme a rolagem.
+const sectionLinks=[...document.querySelectorAll('.nav a[href^="#"]:not(.nav-cta)')];
+const linkByHash=new Map(sectionLinks.map(a=>[a.getAttribute('href'),a]));
+function setActiveLink(link){sectionLinks.forEach(a=>a.classList.toggle('active',a===link))}
+sectionLinks.forEach(a=>a.addEventListener('click',()=>setActiveLink(a)));
+
+// O vermelho do menu só vale no trecho coberto pelos links: da primeira
+// seção depois do hero até o fim do portfólio. Antes (hero) e depois
+// (processo, contato, rodapé) o menu volta ao neutro.
+const heroSection=document.querySelector('.hero');
+const lastSpySection=document.querySelector('#portfolio');
+function updateNavPlain(){
+  const middle=window.innerHeight/2;
+  const beforeRange=heroSection?heroSection.getBoundingClientRect().bottom>middle:false;
+  const afterRange=lastSpySection?lastSpySection.getBoundingClientRect().bottom<middle:false;
+  const plain=beforeRange||afterRange;
+  document.body.classList.toggle('nav-plain',plain);
+  if(plain)setActiveLink(null);
+}
+window.addEventListener('scroll',updateNavPlain,{passive:true});
+window.addEventListener('resize',updateNavPlain);
+updateNavPlain();
+
+const spySections=sectionLinks.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+if(spySections.length){
+  const spy=new IntersectionObserver(entries=>{
+    const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+    if(visible)setActiveLink(linkByHash.get('#'+visible.target.id));
+  },{rootMargin:'-45% 0px -45% 0px',threshold:0});
+  spySections.forEach(s=>spy.observe(s));
+}
+
 document.querySelector('#year').textContent=new Date().getFullYear();
 
-document.querySelector('#contactForm').addEventListener('submit',e=>{e.preventDefault();const data=new FormData(e.currentTarget);const text=`Olá! Meu nome é ${data.get('nome')}. Tenho interesse em ${data.get('servico')}. ${data.get('mensagem')||''}`.trim();alert('Formulário demonstrativo. Para produção, conecte este envio ao WhatsApp, e-mail ou backend.\n\nMensagem gerada:\n'+text)});
+// ==========================================================
+// ENVIO DO FORMULÁRIO PARA O WHATSAPP
+// Número no formato internacional, só dígitos.
+// ==========================================================
+const WHATSAPP_ENGENHEIRO='5517981876884';
+const LIMITE_MENSAGEM=600;
+
+function montarMensagem(data){
+  const nome=(data.get('nome')||'').trim();
+  const telefone=(data.get('telefone')||'').trim();
+  const email=(data.get('email')||'').trim();
+  const servico=(data.get('servico')||'').trim();
+  let detalhes=(data.get('mensagem')||'').trim();
+  // Evita estourar o limite de tamanho da URL em navegadores antigos.
+  if(detalhes.length>LIMITE_MENSAGEM)detalhes=detalhes.slice(0,LIMITE_MENSAGEM)+'...';
+  const linhas=[
+    `Olá! Meu nome é ${nome} e vim pelo site.`,
+    '',
+    `*Serviço de interesse:* ${servico}`,
+    `*Telefone:* ${telefone}`
+  ];
+  if(email)linhas.push(`*E-mail:* ${email}`);
+  if(detalhes)linhas.push('',`*Sobre o projeto:*`,detalhes);
+  return linhas.join('\n');
+}
+
+const contactForm=document.querySelector('#contactForm');
+const formHint=document.querySelector('.form-hint');
+
+contactForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const texto=montarMensagem(new FormData(contactForm));
+  const url=`https://wa.me/${WHATSAPP_ENGENHEIRO}?text=${encodeURIComponent(texto)}`;
+  // A janela é aberta ainda dentro do gesto de clique: qualquer espera
+  // antes desta linha faz o bloqueador de pop-up cancelar a abertura.
+  const janela=window.open(url,'_blank','noopener');
+  // Em desktop sem WhatsApp Web conectado nada acontece na tela, então
+  // deixamos um link visível como saída.
+  if(formHint){
+    formHint.innerHTML='';
+    const aviso=document.createElement('span');
+    aviso.textContent=janela?'Abrimos o WhatsApp com sua mensagem pronta. Não apareceu? ':'Não conseguimos abrir o WhatsApp automaticamente. ';
+    const link=document.createElement('a');
+    link.href=url; link.target='_blank'; link.rel='noopener noreferrer';
+    link.textContent='Clique aqui para enviar.';
+    formHint.append(aviso,link);
+  }
+});
 
 
 // A logo funciona como atalho para o início da página.
@@ -42,5 +121,6 @@ brandLinks.forEach(brandLink => {
         });
         nav.classList.remove('open');
         toggle.setAttribute('aria-expanded', 'false');
+        setActiveLink(null);
     });
 });
