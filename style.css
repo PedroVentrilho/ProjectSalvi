@@ -979,6 +979,47 @@ body:not(.nav-plain) .nav a:not(.nav-cta):not(.instagram-link).active {
   box-shadow:0 0 0 3px rgba(216, 31, 31, .1)
 }
 
+/* Bloco do e-mail com a opção "Não possuo e-mail": ao marcar, o campo
+   fica escurecido e desativado, e a validação de e-mail sai de cena. */
+.email-field {
+  margin-bottom:16px
+}
+
+.email-field .email-label {
+  margin-bottom:0;
+  transition:opacity .2s ease
+}
+
+.email-field.off .email-label {
+  opacity:.5
+}
+
+.contact-form .check-line {
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:9px;
+  margin:10px 0 0;
+  font:600 12px Inter;
+  color:#5d666d
+}
+
+.contact-form .check-line input {
+  width:16px;
+  height:16px;
+  flex:none;
+  padding:0;
+  accent-color:var(--accent);
+  cursor:pointer
+}
+
+.contact-form input:disabled {
+  background:#e3e1de;
+  border-color:#d0cdc9;
+  color:#9aa1a6;
+  cursor:not-allowed
+}
+
 .form-hint {
   display:block;
   color:#7b847f;

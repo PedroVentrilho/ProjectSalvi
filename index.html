@@ -251,10 +251,14 @@
         </div>
 
         <form class="contact-form reveal delay-1" id="contactForm">
-          <div class="form-row"><label>Nome<input type="text" name="nome" placeholder="Seu nome" required></label><label>Telefone / WhatsApp<input type="tel" name="telefone" placeholder="(00) 00000-0000" required></label></div>
-          <label>E-mail<input type="email" name="email" placeholder="voce@email.com"></label>
+          <div class="form-row"><label>Nome<input type="text" name="nome" id="campoNome" placeholder="Seu nome" autocomplete="name" minlength="2" maxlength="60" required></label><label>Telefone / WhatsApp<input type="tel" name="telefone" id="campoTelefone" placeholder="(00) 00000-0000" inputmode="numeric" autocomplete="tel" maxlength="15" required></label></div>
+          <div class="email-field" id="blocoEmail">
+            <label class="email-label">E-mail<input type="email" name="email" id="campoEmail" placeholder="voce@email.com" autocomplete="email" maxlength="100" required></label>
+            <!-- Sem <label> em volta: só a caixinha marca/desmarca, o texto não. -->
+            <div class="check-line"><input type="checkbox" id="campoSemEmail" aria-label="Não possuo e-mail"><span>Não possuo e-mail</span></div>
+          </div>
           <label>Serviço de interesse<select name="servico"><option>Projeto Arquitetônico 3D</option><option>Projeto Estrutural</option><option>Design de Interiores 3D</option><option>Paisagismo e Área Externa</option><option>Regularização e Ampliação</option><option>Laudos e Perícias</option><option>Projeto para Usucapião</option><option>Consultoria Técnica</option><option>Orçamento de Obra</option><option>Financiamento / Caixa</option></select></label>
-          <label>Conte um pouco sobre seu projeto<textarea name="mensagem" rows="5" placeholder="Cidade, tipo de obra, metragem aproximada e o que você precisa."></textarea></label>
+          <label>Conte um pouco sobre seu projeto<textarea name="mensagem" rows="5" maxlength="600" placeholder="Cidade, tipo de obra, metragem aproximada e o que você precisa."></textarea></label>
           <button class="btn btn-primary full" type="submit">Enviar pelo WhatsApp</button>
           <small class="form-hint">Abrimos o WhatsApp com sua mensagem já preenchida — você só confere e envia.</small>
         </form>

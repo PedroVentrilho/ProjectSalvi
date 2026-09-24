@@ -161,7 +161,7 @@ document.querySelector('#year').textContent=new Date().getFullYear();
 // ENVIO DO FORMULÁRIO PARA O WHATSAPP
 // Número no formato internacional, só dígitos.
 // ==========================================================
-const WHATSAPP_ENGENHEIRO='5517981876884';
+const WHATSAPP_ENGENHEIRO='5517920002664';
 const LIMITE_MENSAGEM=600;
 
 function montarMensagem(data){
@@ -186,8 +186,135 @@ function montarMensagem(data){
 const contactForm=document.querySelector('#contactForm');
 const formHint=document.querySelector('.form-hint');
 
+// ----------------------------------------------------------
+// TELEFONE: obrigatório, só dígitos, DDD válido e número completo.
+// O campo aceita apenas números e se formata sozinho como
+// (00) 00000-0000; o envio é bloqueado enquanto estiver incompleto.
+// ----------------------------------------------------------
+const DDDS_VALIDOS=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
+const campoTelefone=document.querySelector('#campoTelefone');
+
+function formatarTelefone(digitos){
+  const d=digitos.slice(0,11);
+  if(d.length<3)return d.length?'('+d:'';
+  const corpo=d.slice(2);
+  const corte=d.length>10?5:4; // celular com 9 dígitos x fixo com 8
+  if(corpo.length<=corte)return `(${d.slice(0,2)}) ${corpo}`;
+  return `(${d.slice(0,2)}) ${corpo.slice(0,corte)}-${corpo.slice(corte)}`;
+}
+
+function erroTelefone(valor){
+  const d=valor.replace(/\D/g,'');
+  if(!d)return 'Informe seu telefone com DDD.';
+  if(d.length<10)return 'Número incompleto. Digite o DDD e o número completo, como (17) 98187-6884.';
+  if(!DDDS_VALIDOS.has(Number(d.slice(0,2))))return `DDD ${d.slice(0,2)} não existe. Confira o código da sua cidade.`;
+  if(d.length===11&&d[2]!=='9')return 'Número de celular com 11 dígitos precisa começar com 9 depois do DDD.';
+  if(d.length===10&&d[2]==='9')return 'Celular tem 9 dígitos. Falta um número.';
+  if(d.length===10&&Number(d[2])<2)return 'Número inválido. Confira o número depois do DDD.';
+  return '';
+}
+
+// ----------------------------------------------------------
+// NOME e E-MAIL: tamanho dentro de um limite razoável e conteúdo
+// coerente. O nome é obrigatório; o e-mail continua opcional, mas se
+// for preenchido precisa ser um endereço válido.
+// ----------------------------------------------------------
+const LIMITE_NOME=60,LIMITE_EMAIL=100;
+const campoNome=document.querySelector('#campoNome');
+const campoEmail=document.querySelector('#campoEmail');
+// Letras (com acento), espaço, apóstrofo, hífen e ponto de abreviação.
+const NOME_VALIDO=/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'.\- ]*$/;
+
+function erroNome(valor){
+  const v=valor.trim().replace(/\s+/g,' ');
+  if(!v)return 'Informe seu nome.';
+  if(v.length<2)return 'Nome muito curto. Escreva pelo menos 2 letras.';
+  if(v.length>LIMITE_NOME)return `Nome muito longo. Use até ${LIMITE_NOME} caracteres.`;
+  if(/\d/.test(v))return 'O nome não deve conter números.';
+  if(!NOME_VALIDO.test(v))return 'Use apenas letras, espaços, hífen e apóstrofo no nome.';
+  return '';
+}
+
+function erroEmail(valor){
+  const v=valor.trim();
+  // Obrigatório, a não ser que a pessoa marque "Não possuo e-mail".
+  if(!v)return 'Informe seu e-mail ou marque "Não possuo e-mail".';
+  if(v.length>LIMITE_EMAIL)return `E-mail muito longo. Use até ${LIMITE_EMAIL} caracteres.`;
+  const partes=v.split('@');
+  if(partes.length!==2||!partes[0]||partes[0].length>64)return 'E-mail inválido. Use o formato voce@email.com.';
+  if(!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(v))return 'E-mail inválido. Use o formato voce@email.com.';
+  if(!/\.[A-Za-z]{2,}$/.test(v))return 'E-mail inválido. Confira o final do endereço, como .com ou .com.br.';
+  return '';
+}
+
+// "Não possuo e-mail": desativa e escurece o campo, guardando o que já
+// tinha sido digitado caso a pessoa mude de ideia.
+const campoSemEmail=document.querySelector('#campoSemEmail');
+const blocoEmail=document.querySelector('#blocoEmail');
+let emailGuardado='';
+
+if(campoSemEmail&&campoEmail){
+  campoSemEmail.addEventListener('change',()=>{
+    const semEmail=campoSemEmail.checked;
+    if(semEmail){emailGuardado=campoEmail.value;campoEmail.value=''}
+    else campoEmail.value=emailGuardado;
+    campoEmail.disabled=semEmail;
+    campoEmail.required=!semEmail;
+    campoEmail.setCustomValidity('');
+    if(blocoEmail)blocoEmail.classList.toggle('off',semEmail);
+    if(!semEmail)campoEmail.focus();
+  });
+}
+
+// O aviso do campo vazio vem do navegador ("Preencha este campo"); aqui
+// ele é trocado por um texto que lembra a opção "Não possuo e-mail".
+if(campoEmail){
+  campoEmail.addEventListener('invalid',()=>{
+    if(!campoEmail.value.trim())campoEmail.setCustomValidity(erroEmail(''));
+  });
+}
+
+// Limpa o aviso assim que a pessoa corrige, e confere ao sair do campo.
+[[campoNome,erroNome],[campoEmail,erroEmail]].forEach(([campo,checar])=>{
+  if(!campo)return;
+  // 'change' cobre o preenchimento automático do navegador, que nem
+  // sempre dispara 'input' e deixaria o aviso antigo preso no campo.
+  ['input','change'].forEach(ev=>campo.addEventListener(ev,()=>campo.setCustomValidity('')));
+  campo.addEventListener('blur',()=>{
+    campo.value=campo.value.trim().replace(/\s+/g,' ');
+    campo.setCustomValidity(campo.value?checar(campo.value):'');
+  });
+});
+
+if(campoTelefone){
+  // Digitação: descarta letras e símbolos e mantém o cursor no fim do texto.
+  ['input','change'].forEach(ev=>campoTelefone.addEventListener(ev,()=>{
+    campoTelefone.value=formatarTelefone(campoTelefone.value.replace(/\D/g,''));
+    campoTelefone.setCustomValidity('');
+  }));
+  // Colar um número com +55, pontos ou espaços também funciona.
+  campoTelefone.addEventListener('paste',e=>{
+    e.preventDefault();
+    let d=(e.clipboardData||window['clipboardData']).getData('text').replace(/\D/g,'');
+    if(d.length>11&&d.startsWith('55'))d=d.slice(2);
+    campoTelefone.value=formatarTelefone(d);
+    campoTelefone.setCustomValidity('');
+  });
+  campoTelefone.addEventListener('blur',()=>{
+    campoTelefone.setCustomValidity(campoTelefone.value?erroTelefone(campoTelefone.value):'');
+  });
+}
+
 contactForm.addEventListener('submit',e=>{
   e.preventDefault();
+  // Na ordem do formulário: o primeiro campo com problema recebe o foco.
+  const checagens=[[campoNome,erroNome],[campoTelefone,erroTelefone],[campoEmail,erroEmail]];
+  for(const [campo,checar] of checagens){
+    if(!campo||campo.disabled)continue; // campo desativado não é validado
+    const erro=checar(campo.value);
+    campo.setCustomValidity(erro);
+    if(erro){campo.reportValidity();campo.focus();return}
+  }
   const texto=montarMensagem(new FormData(contactForm));
   const url=`https://wa.me/${WHATSAPP_ENGENHEIRO}?text=${encodeURIComponent(texto)}`;
   // A janela é aberta ainda dentro do gesto de clique: qualquer espera
